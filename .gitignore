@@ -8,3 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Django-generated sqlite database file
+db.sqlite3
