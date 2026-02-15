@@ -1,4 +1,4 @@
-# ActiveShare Platform
+# Active Share Platform
 
 Une plateforme web permettant aux entreprises d'émettre et de vendre des actions, et aux investisseurs de les acheter.
 
