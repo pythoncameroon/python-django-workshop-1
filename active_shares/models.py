@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models import Sum
 
 # Create your models here.
 class Shareholder(models.Model):
@@ -32,12 +33,6 @@ class Buyer(models.Model):
     last_name = models.CharField(
         max_length=100,
         verbose_name = "Nom"
-    )
-    balance = models.DecimalField(
-        max_digits = 10,
-        decimal_places = 2,
-        default = 0.00,
-        verbose_name = "Solde disponible"
     )
     created_at = models.DateTimeField(
         auto_now_add = True,
@@ -77,7 +72,7 @@ class Share(models.Model):
     )
     buyers = models.ManyToManyField(
         Buyer,
-        blank=True,
+        through='Purchase',
         related_name='purchased_shares',
         verbose_name="Acheteurs"
     )
@@ -98,5 +93,42 @@ class Share(models.Model):
     def __str__(self):
         return f"{self.title} - {self.shareholder.company_name}"
 
+    @property
+    def total_sold(self):
+        result = self.purchases.aggregate(total=Sum('quantity'))['total']
+        return result or 0
+
     def is_available(self):
-        return self.buyers.count() < self.quantity
+        return self.total_sold < self.quantity
+
+    def remaining_quantity(self):
+        return self.quantity - self.total_sold
+
+class Purchase(models.Model):
+    
+    buyer = models.ForeignKey(
+        Buyer, 
+        on_delete=models.CASCADE,
+        related_name='purchases'
+    )
+    share = models.ForeignKey(
+        Share, 
+        on_delete=models.CASCADE,
+        related_name='purchases'
+    )
+    quantity = models.PositiveIntegerField(
+        verbose_name="Nombre de parts achetées",
+        default=1
+    )
+    purchased_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Date d'achat"
+    )
+
+    class Meta:
+        verbose_name = "Achat"
+        verbose_name_plural = "Achats"
+        ordering = ['-purchased_at']
+
+    def __str__(self):
+        return f"{self.buyer} a acheté {self.quantity} parts de {self.share.title}"
